@@ -60,9 +60,8 @@ TERMUX_ENV__SS_TERMUX_APP="@TERMUX_ENV__SS_TERMUX_APP@"
 [ "$TERMUX_ENV__SS_TERMUX_APP" = @"TERMUX_ENV__SS_TERMUX_APP"@ ] && \
 TERMUX_ENV__SS_TERMUX_APP="APP__"
 
-
-termux_core__bash__termux_scoped_env_variable get-value "TERMUX_ROOTFS" \
-    ss="$TERMUX_ENV__SS_TERMUX" "ROOTFS" r+='^((/)|((/[^/]+)+))$' "@TERMUX__ROOTFS@" "$termux_rootfs_default" || return $?
+termux_core__bash__termux_scoped_env_variable get-value "TERMUX_ROOTFS_DIR" \
+    ss="$TERMUX_ENV__SS_TERMUX" "ROOTFS_DIR" r+='^((/)|((/[^/]+)+))$' "@TERMUX__ROOTFS_DIR@" "$termux_rootfs_default" || return $?
 
 termux_core__bash__termux_scoped_env_variable get-value "TERMUX_HOME" \
     ss="$TERMUX_ENV__SS_TERMUX" "HOME" r+='^(/[^/]+)+$' "@TERMUX__HOME@" "$termux_rootfs_default/home" || return $?
@@ -74,13 +73,13 @@ termux_core__bash__termux_scoped_env_variable get-name "TERMUX_PREFIX__N" \
     ss="$TERMUX_ENV__SS_TERMUX" "PREFIX" || return $?
 
 
-if [[ ! -x "$TERMUX_ROOTFS" ]] && [[ "$SUDO_SKIP_ON_NOOP_COMMAND" != "1" ]]; then
-    sudo_log_errors "The TERMUX_ROOTFS '$TERMUX_ROOTFS' path not found or is not executable. Are you running in $TERMUX_APP__NAME app on Android?"
+if [[ ! -x "$TERMUX_ROOTFS_DIR" ]] && [[ "$SUDO_SKIP_ON_NOOP_COMMAND" != "1" ]]; then
+    sudo_log_errors "The TERMUX_ROOTFS_DIR '$TERMUX_ROOTFS_DIR' path not found or is not executable. Are you running in $TERMUX_APP__NAME app on Android?"
     return 1
 fi
 
 # Set variables to readonly to prevent modification by sudo.config
-for var in TERMUX_ENV__SS_TERMUX TERMUX_ENV__S_TERMUX TERMUX_ROOTFS TERMUX_HOME TERMUX_PREFIX TERMUX_PREFIX__N; do
+for var in TERMUX_ENV__SS_TERMUX TERMUX_ENV__S_TERMUX TERMUX_ROOTFS_DIR TERMUX_HOME TERMUX_PREFIX TERMUX_PREFIX__N; do
     readonly ${var}
 done
 
@@ -318,7 +317,7 @@ sudo_main() {
     if [[ "$SUDO_SKIP_ON_NOOP_COMMAND" != "1" ]] && \
         [ -f "$SUDO_CONFIG_FILE_PATH" ] && [ -r "$SUDO_CONFIG_FILE_PATH" ]; then
         # Set variables provided for `sudo.config`.
-        SUDO__TERMUX_ROOTFS="$TERMUX_ROOTFS"
+        SUDO__TERMUX_ROOTFS_DIR="$TERMUX_ROOTFS_DIR"
         SUDO__TERMUX_HOME="$TERMUX_HOME"
         SUDO__TERMUX_PREFIX="$TERMUX_PREFIX"
 
@@ -1627,7 +1626,7 @@ sudo_set_pre_sudo_shell_commands_to_run() {
         # If PATH_PRIORITY is default
         else
             # If SUDO_CANONICAL_PATH_COMMAND is under termux rootfs
-            if [[ "$SUDO_CANONICAL_PATH_COMMAND" == "$TERMUX_ROOTFS"/* ]]; then
+            if [[ "$SUDO_CANONICAL_PATH_COMMAND" == "$TERMUX_ROOTFS_DIR"/* ]]; then
                 priority="termux"
                 sudo_log 3 "Setting PRE_SUDO_SHELL_COMMANDS_TO_RUN with priority to 'termux' bin and library paths for COMMAND_TYPE 'path' since SUDO_PATH_COMMAND is under termux rootfs"
             else
@@ -1663,7 +1662,7 @@ sudo_set_pre_sudo_shell_commands_to_run() {
     sudo_add_export_or_unset_var_command "PRE_SUDO_SHELL_COMMANDS_TO_RUN" "SUDO__TERMUX_PRIORITY_LD_LIBRARY_PATH" "$TERMUX_PRIORITY_LD_LIBRARY_PATH" || return $?
     sudo_add_export_or_unset_var_command "PRE_SUDO_SHELL_COMMANDS_TO_RUN" "SUDO__ANDROID_PRIORITY_LD_LIBRARY_PATH" "$ANDROID_PRIORITY_LD_LIBRARY_PATH" || return $?
  
-    PRE_SUDO_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}ROOTFS='${TERMUX_ROOTFS//\'/\'\\\'\'}';"$'\n'
+    PRE_SUDO_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}ROOTFS_DIR='${TERMUX_ROOTFS_DIR//\'/\'\\\'\'}';"$'\n'
     PRE_SUDO_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}HOME='${TERMUX_HOME//\'/\'\\\'\'}';"$'\n'
     PRE_SUDO_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}PREFIX='${TERMUX_PREFIX//\'/\'\\\'\'}';"$'\n'
     # If `$PREFIX` already exported when running `sudo`, only then export it
@@ -1751,7 +1750,7 @@ sudo_set_pre_sudo_post_shell_commands_to_run() {
     sudo_add_export_or_unset_var_command "PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN" "SUDO__TERMUX_PRIORITY_LD_LIBRARY_PATH" "$TERMUX_PRIORITY_LD_LIBRARY_PATH" || return $?
     sudo_add_export_or_unset_var_command "PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN" "SUDO__ANDROID_PRIORITY_LD_LIBRARY_PATH" "$ANDROID_PRIORITY_LD_LIBRARY_PATH" || return $?
 
-    PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}ROOTFS='${TERMUX_ROOTFS//\'/\'\\\'\'}';"$'\n'
+    PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}ROOTFS_DIR='${TERMUX_ROOTFS_DIR//\'/\'\\\'\'}';"$'\n'
     PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}HOME='${TERMUX_HOME//\'/\'\\\'\'}';"$'\n'
     PRE_SUDO_POST_SHELL_COMMANDS_TO_RUN+="export ${TERMUX_ENV__S_TERMUX}PREFIX='${TERMUX_PREFIX//\'/\'\\\'\'}';"$'\n'
     # If `$PREFIX` already exported when running `sudo`, only then export it
@@ -3576,7 +3575,7 @@ sudo_setup_sudo_shell_home_and_working_environment_wrapper() {
         SUDO_TEMP_DIRECTORY_PREFIX
         SUDO_TEMP_DIRECTORY
 
-        TERMUX_ROOTFS
+        TERMUX_ROOTFS_DIR
         TERMUX_PREFIX
         TERMUX_HOME
 
@@ -3769,7 +3768,7 @@ sudo_setup_shell_home() {
     shell_home_permission="700"
     shell_home_file_type_tests="rwx"
 
-    # Validate if shell_home is a whitelisted path under TERMUX_ROOTFS
+    # Validate if shell_home is a whitelisted path under TERMUX_ROOTFS_DIR
     sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs "${shell_label}_HOME" "$shell_home"
     return_value=$?
     if [ $return_value -ne 0 ] && [ $return_value -ne 2 ] &&  [ $return_value -ne 3 ]; then
@@ -3778,20 +3777,20 @@ sudo_setup_shell_home() {
 
     validation_result=$return_value
 
-    # If shell_home is a whitelisted path under TERMUX_ROOTFS
+    # If shell_home is a whitelisted path under TERMUX_ROOTFS_DIR
     if [ $validation_result -eq 0 ]; then
         # If shell_home and TERMUX_HOME are same, then root ownership
         # must not be set to it otherwise termux app non-root shell will not work
         if [[ "$shell_home" == "$TERMUX_HOME" ]]; then
-            shell_home_ownership="--reference=\"$TERMUX_ROOTFS\""
+            shell_home_ownership="--reference=\"$TERMUX_ROOTFS_DIR\""
         else
             shell_home_ownership="root:root"
         fi
-    # If shell_home is a blacklisted path under TERMUX_ROOTFS
+    # If shell_home is a blacklisted path under TERMUX_ROOTFS_DIR
     elif [ $validation_result -eq 2 ]; then
         sudo_log_errors "The '$shell_home' cannot be used as ${shell_label}_HOME"
         return 1
-    # If shell_home is not under TERMUX_ROOTFS
+    # If shell_home is not under TERMUX_ROOTFS_DIR
     else
         shell_home_ownership="--reference='${shell_home_parent_dir//\'/\'\\\'\'}'"
     fi
@@ -3822,7 +3821,7 @@ sudo_setup_shell_home() {
         shell_rcfile_permission="600"
         shell_rcfile_file_type_tests="rw"
 
-        # Validate if shell_rcfile_parent_dir is a whitelisted path under TERMUX_ROOTFS
+        # Validate if shell_rcfile_parent_dir is a whitelisted path under TERMUX_ROOTFS_DIR
         sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs "${shell_label}_RCFILE_PARENT_DIR" "$shell_rcfile_parent_dir"
             return_value=$?
         if [ $return_value -ne 0 ] && [ $return_value -ne 2 ] &&  [ $return_value -ne 3 ]; then
@@ -3831,22 +3830,22 @@ sudo_setup_shell_home() {
 
         validation_result=$return_value
 
-        # If shell_rcfile_parent_dir is a whitelisted path under TERMUX_ROOTFS
+        # If shell_rcfile_parent_dir is a whitelisted path under TERMUX_ROOTFS_DIR
         if [ $validation_result -eq 0 ]; then
             # If shell_rcfile_parent_dir and TERMUX_HOME are same, then root ownership
             # must not be set to it otherwise termux app non-root shell will not work
             if [[ "$shell_rcfile_parent_dir" == "$TERMUX_HOME" ]]; then
-                shell_rcfile_parent_dir_ownership="--reference=\"$TERMUX_ROOTFS\""
-                shell_rcfile_ownership="--reference=\"$TERMUX_ROOTFS\""
+                shell_rcfile_parent_dir_ownership="--reference=\"$TERMUX_ROOTFS_DIR\""
+                shell_rcfile_ownership="--reference=\"$TERMUX_ROOTFS_DIR\""
             else
                 shell_rcfile_parent_dir_ownership="root:root"
                 shell_rcfile_ownership="root:root"
             fi
-        # If shell_rcfile_parent_dir is a blacklisted path under TERMUX_ROOTFS
+        # If shell_rcfile_parent_dir is a blacklisted path under TERMUX_ROOTFS_DIR
         elif [ $validation_result -eq 2 ]; then
             sudo_log_errors "The '$shell_rcfile_parent_dir' cannot be used as ${shell_label}_RCFILE_PARENT_DIR"
             return 1
-        # If shell_rcfile_parent_dir is not under TERMUX_ROOTFS
+        # If shell_rcfile_parent_dir is not under TERMUX_ROOTFS_DIR
         else
             # If shell_rcfile_parent_dir and shell_home are same
             if [[ "$shell_rcfile_parent_dir" == "$shell_home" ]]; then
@@ -3892,7 +3891,7 @@ sudo_setup_shell_home() {
         shell_histfile_permission="600"
         shell_histfile_file_type_tests="rw"
 
-        # Validate if shell_histfile_parent_dir is a whitelisted path under TERMUX_ROOTFS
+        # Validate if shell_histfile_parent_dir is a whitelisted path under TERMUX_ROOTFS_DIR
         sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs "${shell_label}_HISTFILE_PARENT_DIR" "$shell_histfile_parent_dir"
         return_value=$?
         if [ $return_value -ne 0 ] && [ $return_value -ne 2 ] &&  [ $return_value -ne 3 ]; then
@@ -3901,22 +3900,22 @@ sudo_setup_shell_home() {
 
         validation_result=$return_value
 
-        # If shell_histfile_parent_dir is a whitelisted path under TERMUX_ROOTFS
+        # If shell_histfile_parent_dir is a whitelisted path under TERMUX_ROOTFS_DIR
         if [ $validation_result -eq 0 ]; then
             # If shell_histfile_parent_dir and TERMUX_HOME are same, then root ownership
             # must not be set to it otherwise termux app non-root shell will not work
             if [[ "$shell_histfile_parent_dir" == "$TERMUX_HOME" ]]; then
-                shell_histfile_parent_dir_ownership="--reference=\"$TERMUX_ROOTFS\""
-                shell_histfile_ownership="--reference=\"$TERMUX_ROOTFS\""
+                shell_histfile_parent_dir_ownership="--reference=\"$TERMUX_ROOTFS_DIR\""
+                shell_histfile_ownership="--reference=\"$TERMUX_ROOTFS_DIR\""
             else
                 shell_histfile_parent_dir_ownership="root:root"
                 shell_histfile_ownership="root:root"
             fi
-        # If shell_histfile_parent_dir is a blacklisted path under TERMUX_ROOTFS
+        # If shell_histfile_parent_dir is a blacklisted path under TERMUX_ROOTFS_DIR
         elif [ $validation_result -eq 2 ]; then
             sudo_log_errors "The '$shell_histfile_parent_dir' cannot be used as ${shell_label}_HISTFILE_PARENT_DIR"
             return 1
-        # If shell_histfile_parent_dir is not under TERMUX_ROOTFS
+        # If shell_histfile_parent_dir is not under TERMUX_ROOTFS_DIR
         else
             # If shell_histfile_parent_dir and shell_home are same
             if [[ "$shell_histfile_parent_dir" == "$shell_home" ]]; then
@@ -4140,8 +4139,8 @@ sudo_setup_sudo_shell_working_dir() {
     shell_working_dir_ownership="--reference='${SUDO_SHELL_WORKING_DIR_PARENT_DIR//\'/\'\\\'\'}'"
 
 
-    # If SUDO_SHELL_WORKING_DIR is the same as TERMUX_ROOTFS or is under it
-    if [[ "$SUDO_SHELL_WORKING_DIR" == "$TERMUX_ROOTFS" ]] || [[ "$SUDO_SHELL_WORKING_DIR" == "$TERMUX_ROOTFS"/* ]]; then
+    # If SUDO_SHELL_WORKING_DIR is the same as TERMUX_ROOTFS_DIR or is under it
+    if [[ "$SUDO_SHELL_WORKING_DIR" == "$TERMUX_ROOTFS_DIR" ]] || [[ "$SUDO_SHELL_WORKING_DIR" == "$TERMUX_ROOTFS_DIR"/* ]]; then
         shell_working_dir_file_type_tests="drwx"
     # It might not be possible for the directory to be writable or executable in other paths like in storage or rootfs/system partition
     else
@@ -5138,7 +5137,7 @@ sudo_find_absolute_path_for_executable_and_validate() {
 }
 
 ##
-# Validate if path is under TERMUX_ROOTFS and is not backlisted.
+# Validate if path is under TERMUX_ROOTFS_DIR and is not backlisted.
 #
 # `sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs` `<label>` `<path>`
 ##
@@ -5167,7 +5166,7 @@ sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs() {
     # - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/core/java/android/content/pm/parsing/ApkLiteParseUtils.java;l=671-676
     # - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/core/java/android/content/pm/parsing/FrameworkParsingPackageUtils.java;l=63
 
-    termux_rootfs_escaped="${TERMUX_ROOTFS//./\\.}" # Replace `.` with `\.`
+    termux_rootfs_escaped="${TERMUX_ROOTFS_DIR//./\\.}" # Replace `.` with `\.`
     termux_rootfs_escaped="${termux_rootfs_escaped////[\\\/]+}" # Replace `/` with `[\/]+`
 
     termux_home_escaped="${TERMUX_HOME//./\\.}" # Replace `.` with `\.`
@@ -5179,13 +5178,13 @@ sudo_validate_path_is_a_whitelisted_path_under_termux_rootfs() {
     local valid_path_under_termux_rootfs_regex='^'"$termux_rootfs_escaped"'[\/]+.+'
     local blacklisted_path_in_termux_rootfs_regex='^(('"$termux_home_escaped"'[\/]+\.(cache|config|local|termux))|('"$termux_prefix_escaped"')|('"$termux_prefix_escaped"'[\/]+.*))([\/]+)?$'
 
-    # If path same as TERMUX_ROOTFS
-    if [[ "$path" == "$TERMUX_ROOTFS" ]]; then
-        sudo_log 3 "$label '$path' is the same as TERMUX_ROOTFS"
+    # If path same as TERMUX_ROOTFS_DIR
+    if [[ "$path" == "$TERMUX_ROOTFS_DIR" ]]; then
+        sudo_log 3 "$label '$path' is the same as TERMUX_ROOTFS_DIR"
         return 2
-    # If path is set to an absolute path under TERMUX_ROOTFS
+    # If path is set to an absolute path under TERMUX_ROOTFS_DIR
     elif [[ "$path" =~ $valid_path_under_termux_rootfs_regex ]]; then
-        # If path is set to a blacklist path under TERMUX_ROOTFS
+        # If path is set to a blacklist path under TERMUX_ROOTFS_DIR
         if [[ "$path" =~ $blacklisted_path_in_termux_rootfs_regex ]]; then
             sudo_log 3 "$label '$path' matches one of following blacklisted paths:"
             sudo_log 3 "'$TERMUX_HOME/.{cache,config,local,termux}', '$TERMUX_PREFIX/*'"
@@ -7071,7 +7070,7 @@ priority set.
 The priority is set based on '-a|-A|-AA' or '-t|-T|-TT' flags, and
 if flags are not passed, then the priority for bin paths in '$PATH'
 variable is given to @TERMUX__LNAME@ paths followed by android paths if
-executable canonical path is under '$TERMUX__ROOTFS' directory,
+executable canonical path is under '$TERMUX__ROOTFS_DIR' directory,
 otherwise to android paths followed by @TERMUX__LNAME@ paths.
 To call the 'su' binary, run the 'sudo -p su [user]' command.
 

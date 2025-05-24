@@ -216,7 +216,7 @@ sudo_tests_main() {
     fi
 
     local -a SUDO_TESTS_REQUIRED_VARIABLES_ARRAY=(
-        TERMUX_ROOTFS
+        TERMUX_ROOTFS_DIR
         TERMUX_PREFIX
         TERMUX_HOME
         TERMUX_LD_LIBRARY_PATH

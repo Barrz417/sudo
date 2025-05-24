@@ -279,7 +279,7 @@ priority set.
 The priority is set based on '-a|-A|-AA' or '-t|-T|-TT' flags, and
 if flags are not passed, then the priority for bin paths in '$PATH'
 variable is given to termux paths followed by android paths if
-executable canonical path is under '$TERMUX__ROOTFS' directory,
+executable canonical path is under '$TERMUX__ROOTFS_DIR' directory,
 otherwise to android paths followed by termux paths.
 To call the 'su' binary, run the 'sudo -p su [user]' command.
 
@@ -357,9 +357,9 @@ The `command` must be an `absolute` path to an executable, or `relative` path fr
 
 &nbsp;
 
-The priority for bin paths in `$PATH` variable is set based on ([`-a`](#-a), [`-A`](#-a-1), [`-AA`](#-aa)) or ([`-t`](#-t), [`-T`](#-t-1), [`-TT`](#-tt)) flags. If flags are not passed, then priority is given to `termux` paths followed `android` paths if executable `canonical` path is under `$TERMUX__ROOTFS` directory (like [`-t`](#-t) flag), otherwise to `android` paths followed `termux` paths (like [`-a`](#-a) flag). Check the [`$PATH` and `$LD_LIBRARY_PATH` Priorities](#path-and-ld_library_path-priorities) section for more info.
+The priority for bin paths in `$PATH` variable is set based on ([`-a`](#-a), [`-A`](#-a-1), [`-AA`](#-aa)) or ([`-t`](#-t), [`-T`](#-t-1), [`-TT`](#-tt)) flags. If flags are not passed, then priority is given to `termux` paths followed `android` paths if executable `canonical` path is under `$TERMUX__ROOTFS_DIR` directory (like [`-t`](#-t) flag), otherwise to `android` paths followed `termux` paths (like [`-a`](#-a) flag). Check the [`$PATH` and `$LD_LIBRARY_PATH` Priorities](#path-and-ld_library_path-priorities) section for more info.
 
-If `sudo <command>` is executed, like `sudo ls`, and `ls` is found under `$TERMUX__ROOTFS` directory, which it should be since `coreutils` package provides it at `$TERMUX__PREFIX/bin/ls`, then priority will be set to `termux` paths. If `sudo dumpsys` is executed, then priority should be set to `android` paths since it normally exists at `/system/bin/dumpsys`, i.e not under `$TERMUX__ROOTFS` directory as termux does not provide it with a package or as a wrapper around `/system/bin/dumpsys`.
+If `sudo <command>` is executed, like `sudo ls`, and `ls` is found under `$TERMUX__ROOTFS_DIR` directory, which it should be since `coreutils` package provides it at `$TERMUX__PREFIX/bin/ls`, then priority will be set to `termux` paths. If `sudo dumpsys` is executed, then priority should be set to `android` paths since it normally exists at `/system/bin/dumpsys`, i.e not under `$TERMUX__ROOTFS_DIR` directory as termux does not provide it with a package or as a wrapper around `/system/bin/dumpsys`.
 
 If `sudo -T <command>` is executed with the [`-T`](#-t-1) flag, then it will be ensured that only binaries under `$TERMUX__PREFIX/bin` directory are executed. like `sudo -T ls` should execute `$TERMUX__PREFIX/bin/ls`.
 
@@ -395,7 +395,7 @@ If `sudo -sA <core_script>` is executed with the [`-A`](#-a-1) flag, then it wil
 
 &nbsp;
 
-The `script` command type is incredibly useful for usage with termux plugins like [Termux:Tasker] or [RUN_COMMAND Intent]. Such APIs require script files to be created under `$TERMUX__ROOTFS` or `~/.termux/tasker/` directory to be able to execute them, unless using their `stdin` config. It may get inconvenient to create physical script files for each type of command you want to run. These script files are also neither part of backups of plugin host apps like Tasker and require separate backup methods and nor are part of project configs shared with other people or even between your own devices, and so the scripts need to be added manually to the `~/.termux/tasker/` directory on each device. To solve such issues and to dynamically define scripts of different interpreted languages inside your plugin host app like `Tasker` in local variables (all lowercase `%core_script`) of a task and to pass them to `Termux` as arguments instead of creating script files, the `script` command type can be used. The termux environment will also be properly loaded like setting `LD_PRELOAD` etc before running the commands.
+The `script` command type is incredibly useful for usage with termux plugins like [Termux:Tasker] or [RUN_COMMAND Intent]. Such APIs require script files to be created under `$TERMUX__ROOTFS_DIR` or `~/.termux/tasker/` directory to be able to execute them, unless using their `stdin` config. It may get inconvenient to create physical script files for each type of command you want to run. These script files are also neither part of backups of plugin host apps like Tasker and require separate backup methods and nor are part of project configs shared with other people or even between your own devices, and so the scripts need to be added manually to the `~/.termux/tasker/` directory on each device. To solve such issues and to dynamically define scripts of different interpreted languages inside your plugin host app like `Tasker` in local variables (all lowercase `%core_script`) of a task and to pass them to `Termux` as arguments instead of creating script files, the `script` command type can be used. The termux environment will also be properly loaded like setting `LD_PRELOAD` etc before running the commands.
 
 &nbsp;
 
@@ -1079,7 +1079,7 @@ Note that `$SUDO__SHELL_PS1` and `$SUDO__POST_SHELL_PS1` values will not work if
 
 The following variables will be available when the `sudo-config` file is sourced.
 
-- `$SUDO__TERMUX_ROOTFS` for the Termux rootfs (`$TERMUX__ROOTFS`).
+- `$SUDO__TERMUX_ROOTFS_DIR` for the Termux rootfs (`$TERMUX__ROOTFS_DIR`).
 - `$SUDO__TERMUX_HOME` for the Termux home (`$TERMUX__HOME`), not the `sudo` shell home.
 - `$SUDO__TERMUX_PREFIX` for the Termux prefix (`$TERMUX__PREFIX`).
 
@@ -1940,7 +1940,7 @@ The argument data limits also apply for the [RUN_COMMAND Intent] intent.
 
 #### Path Environment Variables Exported By `sudo`
 
-The `sudo` script exports variables depending on the flags passed. If flags are not passed, then the [`su`](#su) and [`script`](#script) command types export variables as per [`-t`](#-t) flag, the [`asu`](#asu) command type export variables as per [`-a`](#-a) flag and the [`path`](#path) command types export variables as per [`-t`](#-t) flag if executable `canonical` path is under `$TERMUX__ROOTFS` directory, otherwise as per [`-a`](#-a) flag.
+The `sudo` script exports variables depending on the flags passed. If flags are not passed, then the [`su`](#su) and [`script`](#script) command types export variables as per [`-t`](#-t) flag, the [`asu`](#asu) command type export variables as per [`-a`](#-a) flag and the [`path`](#path) command types export variables as per [`-t`](#-t) flag if executable `canonical` path is under `$TERMUX__ROOTFS_DIR` directory, otherwise as per [`-a`](#-a) flag.
 
 The `$PATH` variable value will depend on the flag passed and will vary depending on Android version. If custom paths are passed with [`--export-paths`](#--export-paths) or `$SUDO__ADDITIONAL_PATHS_TO_EXPORT`, they will be still set or appended to `$PATH`.
 

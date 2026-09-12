@@ -3655,6 +3655,8 @@ sudo_setup_sudo_shell_home_and_working_environment() {
 
     sudo_log_literal 3 "Started sudo_setup_sudo_shell_home_and_working_environment"
 
+    sudo_validate_setup_sudo_shell_home_and_working_environment_variable_values_set || return $?
+
     # sudo_setup_shell_home shell_label shell_home_parent_dir shell_home shell_automatically_create_rc_file shell_rcfile_parent_dir shell_rcfile shell_rcfile_value  shell_histfile_parent_dir shell_histfile
     sudo_setup_shell_home "SUDO_SHELL" "$SUDO_SHELL_HOME_PARENT_DIR" "$SUDO_SHELL_HOME" "$SUDO_SHELLS_AUTOMATICALLY_CREATE_RC_FILES" "$SUDO_SHELL_RCFILE_PARENT_DIR" "$SUDO_SHELL_RCFILE" "$SUDO_SHELL_RCFILE_VALUE" "$SUDO_SHELLS_AUTOMATICALLY_CREATE_HISTORY_FILES" "$SUDO_SHELL_HISTFILE_PARENT_DIR" "$SUDO_SHELL_HISTFILE"
     return_value=$?
@@ -3700,6 +3702,49 @@ sudo_setup_sudo_shell_home_and_working_environment() {
     fi
 
     return 0
+
+}
+
+sudo_validate_setup_sudo_shell_home_and_working_environment_variable_values_set() {
+
+    local return_value
+
+    # Ensure "critical" variables exported by `sudo_setup_sudo_shell_home_and_working_environment_wrapper`
+    # before `SU_ENV_COMMAND` command is run are also set inside the
+    # `su --preserve-environment` command as well as env was lost if
+    # its length was `> 4096` for Magisk `<= v23`.
+    # We at least check first and last variable exported, and `TERMUX_` ones.
+    # - https://github.com/topjohnwu/Magisk/commit/b0c1a6f73a205fc31a727280550211f8ae94fbc2
+    # - https://github.com/topjohnwu/Magisk/commit/ef1b928532103c3c81d3d9a4151c7ea58997a7ba
+    # - https://github.com/topjohnwu/Magisk/commit/4e2ecdb92083e862a723e73c240879aec64ca070
+    # - https://github.com/topjohnwu/Magisk/issues/5989
+    # - https://github.com/agnostic-apollo/sudo/issues/14
+    # - https://www.reddit.com/r/termux/comments/1l5a0zm/comment/mwgalnq/
+    sudo_validate_setup_sudo_shell_home_and_working_environment_variable_values_set_inner
+    return_value=$?
+    if [ $return_value -ne 0 ]; then
+        sudo_log_errors "Expected environment variable that was exported is not set inside the 'su --preserve-environment' command."
+        sudo_log_errors "This may be due to problem with the 'su' implementation, like if using Magisk '<= v23'."
+        sudo_log_errors "Update your root/su manager or report to them if the issue still exits with their latest version."
+        return $return_value
+    fi
+
+    return 0
+
+}
+
+sudo_validate_setup_sudo_shell_home_and_working_environment_variable_values_set_inner() {
+
+    sudo_validate_variable_value_set ANDROID__BUILD_VERSION_SDK "$ANDROID__BUILD_VERSION_SDK" sudo_setup_sudo_shell_home_and_working_environment || return $?
+
+    sudo_validate_variable_value_set SUDO_SHELL_HOME_PARENT_DIR "$SUDO_SHELL_HOME_PARENT_DIR" sudo_setup_sudo_shell_home_and_working_environment || return $?
+    sudo_validate_variable_value_set SUDO_SHELL_HOME "$SUDO_SHELL_HOME" sudo_setup_sudo_shell_home_and_working_environment || return $?
+
+    sudo_validate_variable_value_set TERMUX_ROOTFS_DIR "$TERMUX_ROOTFS_DIR" sudo_setup_sudo_shell_home_and_working_environment || return $?
+    sudo_validate_variable_value_set TERMUX_PREFIX "$TERMUX_PREFIX" sudo_setup_sudo_shell_home_and_working_environment || return $?
+    sudo_validate_variable_value_set TERMUX_HOME "$TERMUX_HOME" sudo_setup_sudo_shell_home_and_working_environment || return $?
+
+    sudo_validate_variable_value_set SUDO_DRY_RUN "$SUDO_DRY_RUN" sudo_setup_sudo_shell_home_and_working_environment || return $?
 
 }
 
@@ -5610,6 +5655,42 @@ sudo_remount_partition() {
     fi
 
     return $return_value
+
+}
+
+
+
+##
+# Validate if a variable is set.
+#
+#
+# **Parameters:**
+# `variable_name` - The name of the variable to validate.
+# `variable_value` - The value of the variable to validate.
+# `calling_function_name` - The calling function name.
+# `additional_error` - The additional error message to append.
+#
+# **Returns:**
+# Returns `0` if successful, otherwise returns with a non-zero exit code.
+#
+#
+# `sudo_validate_variable_value_set` `variable_name` `<variable_value>` \
+#     [`<calling_function_name>` `<additional_error>`]
+##
+sudo_validate_variable_value_set() {
+
+    local variable_value="${2:-}"
+
+    if [ -z "$variable_value" ]; then
+        if [ -n "${3:-}" ]; then
+            sudo_log_errors "The '${1:-}' variable is not set while running '${3}'${4:-.}"
+        else
+            sudo_log_errors "The '${1:-}' variable is not set."
+        fi
+        return 1
+    else
+        return 0
+    fi
 
 }
 
